@@ -1,7 +1,12 @@
 #  ---------------------------------------------------------------
 #  cparse.py
 #
-#  Atul Varma
+#  Last Author: Iyad Milhem
+#  Changes:
+#       - Implement Stack guard
+#  2022/01/24
+#
+#  Original Author: Atul Varma
 #  Python C Compiler - Parser
 #  $Id: cparse.py,v 1.2 2004/05/27 16:25:08 varmaa Exp $
 #  ---------------------------------------------------------------
@@ -466,7 +471,26 @@ def p_external_declaration(t):
 def p_function_definition_01(t):
     '''function_definition : type_specifier declarator compound_statement'''
     t[2].set_base_type(t[1])
+    # modification for stack guard
+    # add stack guard parameter in function
+    if t[2].name != "main":
+            guard_declaration = Declaration("gard")  # type: Declaration
+            guard_declaration.extern = 0
+            guard_declaration.is_used = 0
+            guard_declaration.name = "guard"
+            guard_declaration.static = 0
+            guard_declaration.type = BaseType('int')
+            t[3].declaration_list.nodes.insert(0, guard_declaration)
+            left_id = Id("guard", 0)
+            right_id = Const(3735928559, int)
+            bishop_record = Binop(left_id, right_id, "=")
+            t[3].statement_list.nodes.insert(0, bishop_record)
+    # End of modification
+    # Add
+
     t[0] = FunctionDefn(t[2], t[3])
+
+
 
 def p_function_definition_02(t):
     '''function_definition : STATIC type_specifier declarator compound_statement'''
