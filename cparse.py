@@ -473,21 +473,19 @@ def p_function_definition_01(t):
     t[2].set_base_type(t[1])
     # modification for stack guard
     # add stack guard parameter in function
-    if t[2].name != "main":
-            guard_declaration = Declaration("gard")  # type: Declaration
-            guard_declaration.extern = 0
-            guard_declaration.is_used = 0
-            guard_declaration.name = "guard"
-            guard_declaration.static = 0
-            guard_declaration.type = BaseType('int')
-            t[3].declaration_list.nodes.insert(0, guard_declaration)
-            left_id = Id("guard", 0)
-            right_id = Const(3735928559, int)
-            bishop_record = Binop(left_id, right_id, "=")
-            t[3].statement_list.nodes.insert(0, bishop_record)
+    #if t[2].name != "main":
+    guard_declaration = Declaration("gard")  # type: Declaration
+    guard_declaration.extern = 0
+    guard_declaration.is_used = 0
+    guard_declaration.name = "guard"
+    guard_declaration.static = 0
+    guard_declaration.type = BaseType('int')
+    t[3].declaration_list.nodes.insert(0, guard_declaration)
+    left_id = Id("guard", 0)
+    right_id = Const(3735928559, int)
+    bishop_record = Binop(left_id, right_id, "=")
+    t[3].statement_list.nodes.insert(0, bishop_record)
     # End of modification
-    # Add
-
     t[0] = FunctionDefn(t[2], t[3])
 
 

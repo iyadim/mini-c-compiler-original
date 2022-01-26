@@ -15,7 +15,10 @@ STACKGUARD0:
     .text
  	.globl	___stack_chk_fail
     .def	___stack_chk_fail;	.scl	2;	.type	32;	.endef
-# BEGIN FUNCTION: stack_chk_fail()
+
+  # BEGIN FUNCTION: stack_chk_fail()
+
+___stack_chk_fail:
 	pushl	%ebp
     movl	%esp, %ebp
 	subl	$24, %esp
@@ -48,44 +51,16 @@ _addition:
   movl %edx, (%ecx)                 # Perform assignment '='
   movl (%ecx), %eax                 # Copy assignment result to register
 
-  # IF statment - begin
+# Compare stack guard Canary 
 
-  movl -4(%ebp), %eax               # Get value of guard
-  cmpl $3735928559, %eax            # Compare %eax to $3735928559
-  setne %al                         # Perform '!='
-  movzbl %al, %eax                  # Zero-extend the boolean result
-  testl %eax, %eax                  # Test the result
-  jz .L1_done                       # If result is zero, jump to else clause
+  movl -4(%ebp), %eax               # Get canary value from stack
+  xorl ___stack_chk_guard, %eax     # Compare %eax canary with original canary
+  je .L0_done
+  call ___stack_chk_fail            # It is not same canary go to fail function 
 
-  # IF statment - THEN clause - begin
+  # If the canary is the same there is no buffer overflow and it will go to next step.
 
-
-  # FUNCTION CALL to printf() - begin
-
-  movl $LC0, %eax                   # Get addr of string literal 'ERROR: ...'
-  pushl %eax                        # Push arg 1
-  call _printf                      # Call printf()
-  addl $4, %esp                     # Deallocate argument stack
-
-  # FUNCTION CALL to printf() - end
-
-
-  # FUNCTION CALL to exit() - begin
-
-  pushl $0                          # Push arg 1
-  call _exit                        # Call exit()
-  addl $4, %esp                     # Deallocate argument stack
-
-  # FUNCTION CALL to exit() - end
-
-
-  # IF statment - THEN clause - end
-
-  jmp .L1_done
-.L1_done:
-
-  # IF statment - end
-
+.L0_done:
   movl -8(%ebp), %eax               # Get value of sum
   movl %eax, %eax                   # Set return value
   jmp .L0_function_end              # Exit function
@@ -106,12 +81,15 @@ _addition:
 _main:
   pushl %ebp                        # Save old frame pointer
   movl %esp, %ebp                   # Set new frame pointer
-  subl $24, %esp                    # Allocate space for local+temp vars
-  leal -8(%ebp), %edx               # Get address of c2
+  subl $28, %esp                    # Allocate space for local+temp vars
+  leal -12(%ebp), %edx              # Get address of guard
+  movl $3735928559, (%edx)          # Perform assignment '='
+  movl (%edx), %ecx                 # Copy assignment result to register
+  leal -8(%ebp), %ecx               # Get address of c2
 
   # FUNCTION CALL to addition() - begin
 
-  movl %edx, -20(%ebp)              # Save caller-save register to temp
+  movl %ecx, -24(%ebp)              # Save caller-save register to temp
   pushl $1                          # Push arg 2
   pushl $1                          # Push arg 1
   call _addition                    # Call addition()
@@ -119,16 +97,16 @@ _main:
 
   # FUNCTION CALL to addition() - end
 
-  movl -20(%ebp), %edx              # Stack machine: copy temp to register
-  movl %eax, (%edx)                 # Perform assignment '='
-  movl (%edx), %ecx                 # Copy assignment result to register
+  movl -24(%ebp), %ecx              # Stack machine: copy temp to register
+  movl %eax, (%ecx)                 # Perform assignment '='
+  movl (%ecx), %edx                 # Copy assignment result to register
 
   # FUNCTION CALL to printf() - begin
 
-  movl -8(%ebp), %ecx               # Get value of c2
-  pushl %ecx                        # Push arg 2
-  movl $LC1, %ecx                   # Get addr of string literal 'additio...'
-  pushl %ecx                        # Push arg 1
+  movl -8(%ebp), %edx               # Get value of c2
+  pushl %edx                        # Push arg 2
+  movl $LC0, %edx                   # Get addr of string literal 'additio...'
+  pushl %edx                        # Push arg 1
   call _printf                      # Call printf()
   addl $8, %esp                     # Deallocate argument stack
 
@@ -136,24 +114,24 @@ _main:
 
   leal -4(%ebp), %eax               # Get address of a
   movl $0, (%eax)                   # Perform assignment '='
-  movl (%eax), %ecx                 # Copy assignment result to register
+  movl (%eax), %edx                 # Copy assignment result to register
 
   # FUNCTION CALL to printf() - begin
 
-  movl $LC2, %ecx                   # Get addr of string literal 'Please ...'
-  pushl %ecx                        # Push arg 1
+  movl $LC1, %edx                   # Get addr of string literal 'Please ...'
+  pushl %edx                        # Push arg 1
   call _printf                      # Call printf()
   addl $4, %esp                     # Deallocate argument stack
 
   # FUNCTION CALL to printf() - end
 
-  leal -16(%ebp), %eax              # Get address of n
+  leal -20(%ebp), %eax              # Get address of n
 
   # FUNCTION CALL to read() - begin
 
-  movl %eax, -24(%ebp)              # Save caller-save register to temp
+  movl %eax, -28(%ebp)              # Save caller-save register to temp
   pushl $35                         # Push arg 3
-  leal -9(%ebp), %eax               # Get address of c1
+  leal -13(%ebp), %eax              # Get address of c1
                                     # (Address-of operator '&' used here)
   pushl %eax                        # Push arg 2
   pushl $0                          # Push arg 1
@@ -162,26 +140,26 @@ _main:
 
   # FUNCTION CALL to read() - end
 
-  movl -24(%ebp), %ecx              # Stack machine: copy temp to register
-  movl %eax, (%ecx)                 # Perform assignment '='
-  movl (%ecx), %edx                 # Copy assignment result to register
+  movl -28(%ebp), %edx              # Stack machine: copy temp to register
+  movl %eax, (%edx)                 # Perform assignment '='
+  movl (%edx), %ecx                 # Copy assignment result to register
 
   # IF statment - begin
 
-  movl -4(%ebp), %edx               # Get value of a
-  cmpl $0, %edx                     # Compare %edx to $0
-  sete %dl                          # Perform '=='
-  movzbl %dl, %edx                  # Zero-extend the boolean result
-  testl %edx, %edx                  # Test the result
-  jz .L4_else                       # If result is zero, jump to else clause
+  movl -4(%ebp), %ecx               # Get value of a
+  cmpl $0, %ecx                     # Compare %ecx to $0
+  sete %cl                          # Perform '=='
+  movzbl %cl, %ecx                  # Zero-extend the boolean result
+  testl %ecx, %ecx                  # Test the result
+  jz .L3_else                       # If result is zero, jump to else clause
 
   # IF statment - THEN clause - begin
 
 
   # FUNCTION CALL to printf() - begin
 
-  movl $LC3, %edx                   # Get addr of string literal 'a has N...'
-  pushl %edx                        # Push arg 1
+  movl $LC2, %ecx                   # Get addr of string literal 'a has N...'
+  pushl %ecx                        # Push arg 1
   call _printf                      # Call printf()
   addl $4, %esp                     # Deallocate argument stack
 
@@ -190,15 +168,15 @@ _main:
 
   # IF statment - THEN clause - end
 
-  jmp .L3_done
+  jmp .L2_done
 
   # IF statment - ELSE clause - begin
 
-.L4_else:
+.L3_else:
 
   # FUNCTION CALL to printf() - begin
 
-  movl $LC4, %eax                   # Get addr of string literal 'a has c...'
+  movl $LC3, %eax                   # Get addr of string literal 'a has c...'
   pushl %eax                        # Push arg 1
   call _printf                      # Call printf()
   addl $4, %esp                     # Deallocate argument stack
@@ -208,23 +186,34 @@ _main:
 
   # IF statment - ELSE clause - end
 
-.L3_done:
+.L2_done:
 
   # IF statment - end
 
 
   # FUNCTION CALL to printf() - begin
 
-  movl $LC5, %eax                   # Get addr of string literal 'Exiting...'
+  movl $LC4, %eax                   # Get addr of string literal 'Exiting...'
   pushl %eax                        # Push arg 1
   call _printf                      # Call printf()
   addl $4, %esp                     # Deallocate argument stack
 
   # FUNCTION CALL to printf() - end
 
+
+# Compare stack guard Canary 
+
+  movl -4(%ebp), %eax               # Get canary value from stack
+  xorl ___stack_chk_guard, %eax     # Compare %eax canary with original canary
+  je .L1_done
+  call ___stack_chk_fail            # It is not same canary go to fail function 
+
+  # If the canary is the same there is no buffer overflow and it will go to next step.
+
+.L1_done:
   movl $0, %eax                     # Set return value
-  jmp .L2_function_end              # Exit function
-.L2_function_end:
+  jmp .L1_function_end              # Exit function
+.L1_function_end:
   movl %ebp, %esp                   # Deallocate stack frame
   popl %ebp                         # Restore old stack frame
   ret
@@ -235,15 +224,13 @@ _main:
 .global_vars:
 
 LC0:
-  .ascii "ERROR: __stack_chk_guard has been corrupted\12\0"
-LC1:
   .ascii "addition result %i: \12\0"
-LC2:
+LC1:
   .ascii "Please give input: \12\0"
-LC3:
+LC2:
   .ascii "a has NOT changed.\12\0"
-LC4:
+LC3:
   .ascii "a has changed. Buffer Overflow!\12\0"
-LC5:
+LC4:
   .ascii "Exiting\12\0"
 

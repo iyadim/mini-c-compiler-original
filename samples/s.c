@@ -8,15 +8,8 @@ int addition(int num1, int num2)
      int sum;
      sum = num1+num2;
 
-     if (guard != 3735928559)
-     {
-        printf("ERROR: __stack_chk_guard has been corrupted\n");
-        exit(0);
-      }
-
      return sum;
 }
-
 
 int main() {
 	char c1;
